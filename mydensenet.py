@@ -1,8 +1,3 @@
-
-# coding: utf-8
-
-# In[ ]:
-
 from keras.models import Model
 from keras.layers import Input, add
 from keras.layers.merge import concatenate
@@ -44,15 +39,15 @@ def DenseNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, drop
     for block_idx in range(nb_dense_block - 1):
         stage = block_idx+2
         LR = x
-        x, nb_filter = dense_block(x, stage, nb_layers[block_idx], nb_filter, growth_rate, dropout_rate=dropout_rate)
+        x = dense_block(x, stage, nb_layers[block_idx], nb_filter, growth_rate, dropout_rate=dropout_rate)
         
         # Add transition_block
         x = transition_block(x, stage, nb_filter, compression=compression, dropout_rate=dropout_rate)
-        #x = add([LR, x])
+        x = add([LR, x])
         nb_filter = int(nb_filter * compression)
 
     final_stage = stage + 1
-    x, nb_filter = dense_block(x, final_stage, nb_layers[-1], nb_filter, growth_rate, dropout_rate=dropout_rate)
+    x = dense_block(x, final_stage, nb_layers[-1], nb_filter, growth_rate, dropout_rate=dropout_rate)
     x = Conv2D(1, (3, 3), padding='same', kernel_initializer='glorot_normal')(x)
     x = Activation('relu', name='relu'+str(final_stage)+'_blk')(x)
     x = add([x, img_input])
@@ -142,5 +137,5 @@ def dense_block(x, stage, nb_layers, nb_filter, growth_rate, dropout_rate=None, 
         if grow_nb_filters:
             nb_filter += growth_rate
 
-    return concat_feat, nb_filter
+    return concat_feat
 
