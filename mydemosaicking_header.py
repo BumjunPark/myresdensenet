@@ -1,9 +1,9 @@
 from __future__ import print_function
 import keras
 from keras import backend as K
-from keras.models import Sequential, Model
+from keras.models import Sequential, Model, load_model
 from keras.layers import Dense, Activation
-from keras.layers import Conv2D, MaxPooling2D, Input, Merge, ZeroPadding2D, merge, add
+from keras.layers import Conv2D, MaxPooling2D, Input, add
 import tensorflow as tf
 from keras.models import load_model
 from keras import optimizers
@@ -18,6 +18,8 @@ import numpy as np
 import re
 import math
 import h5py
+import imageio
+import matplotlib.pyplot as plt
 
 
 def tf_log10(x):
@@ -40,6 +42,7 @@ def load_h5(directory, filename, num):
                 count = int(count/10)
                 s = s+1
             h5 = np.array(hf.get(filename[s+1:-3]))
+            h5 = np.transpose(h5)
             h5 = np.reshape(h5,(1, h5.shape[0], h5.shape[1],1))    
     return h5  
 
@@ -85,12 +88,13 @@ def train_image_gen(patch, gt_patch, channel, BATCH_SIZE):
             yield (batch_x, batch_y)
             
             
-def valid_image_gen(img, gt_img, num):
-    while num>0:
-        batch_x = np.array(img[num-1])/255
-        batch_y = np.array(gt_img[num-1])/255
-        num = num-1
-        yield (batch_x, batch_y)
+def valid_image_gen(img, gt_img, channel, num):
+    offset = 100*channel
+    while True:
+        for i in range(num):
+            batch_x = np.array(img[offset+i])/255
+            batch_y = np.array(gt_img[offset+i])/255
+            yield (batch_x, batch_y)
         
 
 def step_decay(epoch):

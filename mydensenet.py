@@ -5,7 +5,7 @@ from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.convolutional import Conv2D
 import keras.backend as K
 
-def DenseNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, dropout_rate=0.0, weights_path=None):
+def DenseNet(nb_dense_block=20, growth_rate=32, nb_filter=64, reduction=0.0, dropout_rate=0.0, weights_path=None):
     '''Instantiate the DenseNet 121 architecture,
         # Arguments
             nb_dense_block: number of dense blocks to add to end
@@ -26,8 +26,8 @@ def DenseNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, drop
     
 
     # From architecture for ImageNet (Table 1 in the paper)
-    nb_filter = 64
-    nb_layers = [6,6,6,6] # For DenseNet-121
+    #nb_filter = 64
+    nb_layers = 6 # For DenseNet-121
 
     # Initial convolution
 
@@ -39,7 +39,7 @@ def DenseNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, drop
     for block_idx in range(nb_dense_block - 1):
         stage = block_idx+2
         LR = x
-        x = dense_block(x, stage, nb_layers[block_idx], nb_filter, growth_rate, dropout_rate=dropout_rate)
+        x = dense_block(x, stage, nb_layers, nb_filter, growth_rate, dropout_rate=dropout_rate)
         
         # Add transition_block
         x = transition_block(x, stage, nb_filter, compression=compression, dropout_rate=dropout_rate)
@@ -47,7 +47,7 @@ def DenseNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, drop
         nb_filter = int(nb_filter * compression)
 
     final_stage = stage + 1
-    x = dense_block(x, final_stage, nb_layers[-1], nb_filter, growth_rate, dropout_rate=dropout_rate)
+    x = dense_block(x, final_stage, nb_layers, nb_filter, growth_rate, dropout_rate=dropout_rate)
     x = Conv2D(1, (3, 3), padding='same', kernel_initializer='glorot_normal')(x)
     x = Activation('relu', name='relu'+str(final_stage)+'_blk')(x)
     x = add([x, img_input])
@@ -73,9 +73,9 @@ def conv_block(x, stage, branch, nb_filter, dropout_rate=None):
     relu_name_base = 'relu' + str(stage) + '_' + str(branch)
 
     # 1x1 Convolution (Bottleneck layer)
-    inter_channel = nb_filter * 4  
-    x = Conv2D(inter_channel, (1, 1), padding='same', kernel_initializer='glorot_normal', name=conv_name_base+'_x1')(x)
-    x = Activation('relu', name=relu_name_base+'_x1')(x)    
+    #inter_channel = nb_filter * 4  
+    #x = Conv2D(inter_channel, (1, 1), padding='same', kernel_initializer='glorot_normal', name=conv_name_base+'_x1')(x)
+    #x = Activation('relu', name=relu_name_base+'_x1')(x)    
 
     if dropout_rate:
         x = Dropout(dropout_rate)(x)
