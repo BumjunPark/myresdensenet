@@ -46,6 +46,23 @@ def load_h5(directory, filename, num):
             h5 = np.reshape(h5,(1, h5.shape[0], h5.shape[1],1))    
     return h5  
 
+def load_h5_RGB(directory, filename, num):
+    dirname=directory + filename
+    with h5py.File(dirname, 'r') as hf:
+        if filename[0] in ['g','t']:
+            h5 = np.array(hf.get(filename[:-3]))
+            h5 = np.transpose(h5, (3, 1, 2, 0))
+            h5 = np.reshape(h5,(h5.shape[0], h5.shape[1], h5.shape[2], h5.shape[3]))
+        else:
+            count = num
+            s = 0
+            while count>0:
+                count = int(count/10)
+                s = s+1
+            h5 = np.array(hf.get(filename[s+1:-3]))
+            h5 = np.transpose(h5, (2, 1, 0))
+            h5 = np.reshape(h5,(1, h5.shape[0], h5.shape[1],h5.shape[2]))    
+    return h5  
 
 def PSNR(y_true, y_pred):
 	max_pixel = 1.0
@@ -87,13 +104,42 @@ def train_image_gen(patch, gt_patch, channel, BATCH_SIZE):
             batch_y = gt_patch[offset:offset+BATCH_SIZE]/255
             yield (batch_x, batch_y)
             
+def train_image_gen_RGB(patch, gt_patch, BATCH_SIZE):
+    patch = np.array(patch[0])
+    gt_patch = np.array(gt_patch[0])
+    while True:
+        for step in range(len(patch)//BATCH_SIZE):
+            offset = step*BATCH_SIZE
+            batch_x = patch[offset:offset+BATCH_SIZE]/255
+            batch_y = gt_patch[offset:offset+BATCH_SIZE]/255
+            a = np.random.randint(4,size=1)[0]
+            for i in range(BATCH_SIZE):
+                for j in range(4):
+                    batch_x[i,:,:,j] = np.rot90(batch_x[i,:,:,j], a)
+                for j in range(3):
+                    batch_y[i,:,:,j] = np.rot90(batch_y[i,:,:,j], a)
+            if np.random.randint(2,size=1)[0] == 1:  # random flip 
+                batch_x = np.flip(batch_x, axis=1)
+                batch_y = np.flip(batch_y, axis=1)
+            if np.random.randint(2,size=1)[0] == 1: 
+                batch_x = np.flip(batch_x, axis=0)
+                batch_y = np.flip(batch_y, axis=0)
+            yield (batch_x, batch_y)
+            
             
 def valid_image_gen(img, gt_img, channel, num):
-    offset = 18*channel
+    offset = 100*channel
     while True:
         for i in range(num):
             batch_x = np.array(img[offset+i])/255
             batch_y = np.array(gt_img[offset+i])/255
+            yield (batch_x, batch_y)
+            
+def valid_image_gen_RGB(img, gt_img, num):
+    while True:
+        for i in range(num):
+            batch_x = np.array(img[i])/255
+            batch_y = np.array(gt_img[i])/255            
             yield (batch_x, batch_y)
         
 
